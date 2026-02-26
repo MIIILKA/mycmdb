@@ -110,7 +110,7 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
         <div style={containerStyle}>
             {/* Рядок 1: Назва */}
             <div style={inputGroup}>
-                <label style={labelStyle}><span style={{color: colors.danger}}>*</span> Назва активу (Name)</label>
+                <label style={labelStyle}><span style={{color: colors.danger}}>*</span> Name</label>
                 <input
                     value={data.rawName || ''}
                     onChange={e => updateField('rawName', e.target.value)}
@@ -135,13 +135,13 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
 
                     {type === 'module' && (
                         <div style={inputGroup}>
-                            <label style={labelStyle}>Основна система (Parent System)</label>
+                            <label style={labelStyle}>Основна система</label>
                             <input value={parentName || data.parentName || ''} disabled style={inputStyle} />
                         </div>
                     )}
 
                     <div style={inputGroup}>
-                        <label style={labelImpactStyle}>Бізнес-вплив (Business Impact)</label>
+                        <label style={labelStyle}>Бізнес-вплив (Business Impact)</label>
                         <select
                             value={data.impact || ''}
                             onChange={e => updateField('impact', e.target.value)}
@@ -200,12 +200,12 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
                     </div>
 
                     <div style={inputGroup}>
-                        <label style={labelStyle}>Власник сервісу (Service Owner)</label>
+                        <label style={labelStyle}>Власник сервісу</label>
                         <input value={data.owner || ''} onChange={e => updateField('owner', e.target.value)} style={inputStyle} readOnly={readOnly} />
                     </div>
 
                     <div style={inputGroup}>
-                        <label style={labelStyle}>Час гарантованого функціонування (SLA)</label>
+                        <label style={labelStyle}>Час гарантованого функціонування</label>
                         <input value={data.uptime || ''} onChange={e => updateField('uptime', e.target.value)} style={inputStyle} readOnly={readOnly} />
                     </div>
 
@@ -247,10 +247,12 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
                         </div>
                     )}
                     <div style={inputGroup}>
-                        <label style={labelImpactStyle}>Бізнес-вплив</label>
+                        <label style={labelImpactStyle}>Бізнес-вплив (Business Impact)</label>
                         <select value={data.impact || ''} onChange={e => updateField('impact', e.target.value)} style={inputStyle} disabled={readOnly}>
-                            <option value="середній">середній</option>
+                            <option value="середній">великий</option>
+                            <option value="великий">середній</option>
                             <option value="незначний">незначний</option>
+
                         </select>
                     </div>
                     <div style={inputGroup}>
@@ -280,7 +282,6 @@ const ViewPage = () => {
     const [history, setHistory] = useState([]);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
-    // Отримання даних активу
     useEffect(() => {
         const cardRef = ref(db, `cards/${id}`);
         const unsubscribe = onValue(cardRef, (snap) => {
@@ -343,7 +344,7 @@ const ViewPage = () => {
     };
 
     const handleDelete = () => {
-        if (window.confirm("Ви дійсно бажаєте безповоротно видалити цей CI актив?")) {
+        if (window.confirm("Ви дійсно бажаєте безповоротно видалити цю карточку?")) {
             logAction(card.name, "ВИДАЛЕННЯ", "Вилучено з реєстру");
             remove(ref(db, `cards/${id}`)).then(() => navigate('/'));
         }
@@ -682,8 +683,7 @@ const CreatePage = () => {
         };
 
         push(ref(db, 'cards'), finalData).then(() => {
-            logAction(finalData.name, "СТВОРЕННЯ", "Додано новий CI актив");
-            alert("Актив успішно зареєстровано в базі даних!");
+            logAction(finalData.name, "СТВОРЕННЯ", "Додано нову карточку");
             navigate('/');
         });
     };
@@ -693,7 +693,7 @@ const CreatePage = () => {
             <div style={{ backgroundColor: '#fff', padding: '50px', maxWidth: '1150px', margin: '0 auto', borderRadius: '20px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.05)' }}>
                 <div style={{ borderLeft: `6px solid ${colors.primary}`, paddingLeft: '25px', marginBottom: '45px' }}>
                     <h2 style={{ margin: 0, color: colors.textDark, fontSize: '32px', fontWeight: '900' }}>
-                        РЕЄСТРАЦІЯ АКТИВУ: {selection.env}
+                        РЕЄСТРАЦІЯ НОВОЇ КАРТОЧКИ: {selection.env}
                     </h2>
                     <p style={{ color: colors.textGray, marginTop: '10px', fontSize: '16px' }}>Категорія: {selection.category}</p>
                 </div>
@@ -712,7 +712,7 @@ const CreatePage = () => {
                         onClick={handleSave}
                         style={{ ...globalStyle, background: colors.primary, color: '#fff', border: 'none', padding: '20px 100px', fontWeight: '900', cursor: 'pointer', borderRadius: '12px', fontSize: '18px', boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.4)' }}
                     >
-                        ЗБЕРЕГТИ АКТИВ У FIREBASE
+                        СТВОРИТИ
                     </button>
                     <button
                         onClick={() => navigate('/')}
