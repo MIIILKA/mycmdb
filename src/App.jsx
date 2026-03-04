@@ -583,7 +583,7 @@ const Dashboard = () => {
                                 style={{ background: '#fff', borderRadius: '12px', cursor: 'pointer', transition: 'transform 0.1s' }}
                                 onClick={() => navigate(`/view/${c.id}`)}
                                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fdfdfd'; e.currentTarget.style.boxShadow = '0 4px 10px rgba(0,0,0,0.03)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.boxShadow = 'none'; }}
+                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.boxShadow  = 'none'; }}
                             >
                                 <td style={{ padding: '20px 25px', color: colors.primary, fontWeight: '800', borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px', border: `1px solid ${colors.border}`, borderRight: 'none' }}>{c.name}</td>
                                 <td style={{ padding: '20px 25px', fontSize: '14px', borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}` }}>{c.type === 'system' ? 'Основна система' : 'Модуль'}</td>
