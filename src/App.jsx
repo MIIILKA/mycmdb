@@ -586,7 +586,7 @@ const Dashboard = () => {
                                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.boxShadow = 'none'; }}
                             >
                                 <td style={{ padding: '20px 25px', color: colors.primary, fontWeight: '800', borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px', border: `1px solid ${colors.border}`, borderRight: 'none' }}>{c.name}</td>
-                                <td style={{ padding: '20px 25px', fontSize: '14px', borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}` }}>{c.type === 'system' ? 'Система' : 'Модуль'}</td>
+                                <td style={{ padding: '20px 25px', fontSize: '14px', borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}` }}>{c.type === 'system' ? 'Основна система' : 'Модуль'}</td>
                                 <td style={{ padding: '20px 25px', color: colors.textGray, fontSize: '14px', borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}` }}>{c.uptime || '—'}</td>
                                 <td style={{ padding: '20px 25px', fontSize: '14px', borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}` }}>{c.category}</td>
                                 <td style={{ padding: '20px 25px', borderTopRightRadius: '12px', borderBottomRightRadius: '12px', border: `1px solid ${colors.border}`, borderLeft: 'none' }}></td>
