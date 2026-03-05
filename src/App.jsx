@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { db } from './firebase';
 import { ref, onValue, push, remove, update as fireUpdate, serverTimestamp } from "firebase/database";
@@ -42,6 +42,76 @@ const logAction = (ciName, actionType, details = "") => {
         timestamp: serverTimestamp(),
         details: details
     });
+};
+
+/**
+ * MultiDropdown - компонент для мульти-вибору у фільтрах на Dashboard
+ */
+const MultiDropdown = ({ label, options, selected, onToggle }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setIsOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div ref={dropdownRef} style={{ position: 'relative', minWidth: '200px' }}>
+            <div
+                onClick={() => setIsOpen(!isOpen)}
+                style={{
+                    padding: '12px 15px',
+                    background: '#fff',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontWeight: '600',
+                    ...globalStyle
+                }}
+            >
+                <span style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                    {selected.length === options.length ? `Всі ${label}` : `${label}: ${selected.length}`}
+                </span>
+                <span style={{fontSize:'10px'}}>{isOpen ? '▲' : '▼'}</span>
+            </div>
+
+            {isOpen && (
+                <div style={{
+                    position: 'absolute',
+                    top: '110%',
+                    left: 0,
+                    right: 0,
+                    background: '#fff',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '10px',
+                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                    zIndex: 2000,
+                    padding: '10px',
+                    maxHeight: '250px',
+                    overflowY: 'auto'
+                }}>
+                    {options.map(opt => (
+                        <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', cursor: 'pointer', fontSize: '14px', transition:'background 0.2s', ...globalStyle }}>
+                            <input
+                                type="checkbox"
+                                checked={selected.includes(opt.value)}
+                                onChange={() => onToggle(opt.value)}
+                            />
+                            {opt.label}
+                        </label>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 };
 
 // --- КОМПОНЕНТ ДЕТАЛЬНИХ ПОЛІВ ---
@@ -135,12 +205,22 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
                     {/* Поля для PROD-середовища */}
                     <div style={inputGroup}>
                         <label style={labelStyle}>Менеджер сервісу (Service Manager)</label>
-                        <input value={data.manager || ''} onChange={e => updateField('manager', e.target.value)} style={inputStyle} readOnly={readOnly} />
+                        <select
+                            value={data.manager || ''}
+                            onChange={e => updateField('manager', e.target.value)}
+                            style={inputStyle}
+                            disabled={readOnly}
+                        >
+                            <option value="">-- Оберіть менеджера --</option>
+                            <option value="менеджер 1 директор">менеджер 1 директор</option>
+                            <option value="менеджер 2 керівник">менеджер 2 керівник</option>
+                            <option value="менеджер 3 правління">менеджер 3 правління</option>
+                        </select>
                     </div>
 
                     <div style={inputGroup}>
                         <label style={labelStyle}>Тип сервісу (CI Type)</label>
-                        <input value={type === 'system' ? 'Основна система' : 'Модуль'} disabled style={{...inputStyle,}} />
+                        <input value={type === 'system' ? 'Основна система' : 'Модуль'} disabled style={{...inputStyle}} />
                     </div>
 
                     {/* ПУНКТ 4: Виправлено відображення назви основної системи */}
@@ -184,6 +264,35 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
                             type="date"
                             value={data.commissioningDate || ''}
                             onChange={e => updateField('commissioningDate', e.target.value)}
+                            style={inputStyle}
+                            readOnly={readOnly}
+                        />
+                    </div>
+
+                    <div style={inputGroup}>
+                        <label style={labelStyle}>Дата актуалізації змін</label>
+                        <input
+                            value={data.updatedAt ? new Date(data.updatedAt).toLocaleString() : 'Немає даних'}
+                            disabled
+                            style={{...inputStyle, backgroundColor: '#f0f0f0'}}
+                        />
+                    </div>
+
+                    <div style={inputGroup}>
+                        <label style={labelStyle}>RTO</label>
+                        <input
+                            value={data.rto || ''}
+                            onChange={e => updateField('rto', e.target.value)}
+                            style={inputStyle}
+                            readOnly={readOnly}
+                        />
+                    </div>
+
+                    <div style={inputGroup}>
+                        <label style={labelStyle}>RPO</label>
+                        <input
+                            value={data.rpo || ''}
+                            onChange={e => updateField('rpo', e.target.value)}
                             style={inputStyle}
                             readOnly={readOnly}
                         />
@@ -283,6 +392,22 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
                         </div>
                     )}
                     <div style={inputGroup}>
+                        <label style={labelStyle}>Дата актуалізації змін</label>
+                        <input
+                            value={data.updatedAt ? new Date(data.updatedAt).toLocaleString() : 'Немає даних'}
+                            disabled
+                            style={{...inputStyle, backgroundColor: '#f0f0f0'}}
+                        />
+                    </div>
+                    <div style={inputGroup}>
+                        <label style={labelStyle}>RTO</label>
+                        <input value={data.rto || ''} onChange={e => updateField('rto', e.target.value)} style={inputStyle} readOnly={readOnly} />
+                    </div>
+                    <div style={inputGroup}>
+                        <label style={labelStyle}>RPO</label>
+                        <input value={data.rpo || ''} onChange={e => updateField('rpo', e.target.value)} style={inputStyle} readOnly={readOnly} />
+                    </div>
+                    <div style={inputGroup}>
                         <label style={labelImpactStyle}>Бізнес-вплив (Business Impact)</label>
                         <select value={data.impact || ''} onChange={e => updateField('impact', e.target.value)} style={inputStyle} disabled={readOnly}>
                             <option value="середній">великий</option>
@@ -332,7 +457,7 @@ const ViewPage = () => {
                         if (allData) {
                             const filtered = Object.keys(allData)
                                 .map(k => ({ id: k, ...allData[k] }))
-                                .filter(c => c.type === 'module' && c.parentName === val.name);
+                                .filter(c => c.type === 'module' && (c.parentName === val.name || c.parentName === val.rawName));
                             setRelatedModules(filtered);
                         }
                     });
@@ -357,19 +482,13 @@ const ViewPage = () => {
     const handleUpdate = () => {
         if (!tempData.rawName) return alert("Назва обов'язкова!");
 
-        const changedFields = [];
-        Object.keys(tempData).forEach(key => {
-            if (tempData[key] !== card[key]) {
-                changedFields.push(key);
-            }
-        });
+        const updatedData = {
+            ...tempData,
+            updatedAt: Date.now() // Встановлюємо дату актуалізації
+        };
 
-        fireUpdate(ref(db, `cards/${id}`), tempData).then(() => {
-            const detailsText = changedFields.length > 0
-                ? `Змінено поля: ${changedFields.join(', ')}`
-                : "Збережено без змін полів";
-
-            logAction(card.name, "РЕДАГУВАННЯ", detailsText);
+        fireUpdate(ref(db, `cards/${id}`), updatedData).then(() => {
+            logAction(card.name, "РЕДАГУВАННЯ", "Оновлено дані та дату актуалізації");
             setEditMode(false);
             alert("Картку успішно оновлено в Firebase!");
         });
@@ -487,10 +606,8 @@ const Dashboard = () => {
     const navigate = useNavigate();
 
     const [fName, setFName] = useState('');
-    const [fEnv, setFEnv] = useState('ALL');
-    const [fType, setFType] = useState('ALL');
-    const [fMode, setFMode] = useState('ALL');
-    const [fImpact, setFImpact] = useState('ALL');
+    const [fEnv, setFEnv] = useState(['PROD', 'TEST', 'DEV', 'PREPROD']);
+    const [fType, setFType] = useState(['system', 'module']);
 
     useEffect(() => {
         const cardsRef = ref(db, 'cards');
@@ -508,13 +625,15 @@ const Dashboard = () => {
 
     const subs = ["External ICT Service", "Infrastructure ICT Sevice", "Business ICT Sevice", "Cybersecurity ICT Sevice"];
 
+    const toggleFilter = (list, setList, val) => {
+        setList(list.includes(val) ? list.filter(i => i !== val) : [...list, val]);
+    };
+
     const filtered = cards
         .filter(c => c.category === selectedSub)
         .filter(c => c.name.toLowerCase().includes(fName.toLowerCase()))
-        .filter(c => fEnv === 'ALL' || c.env === fEnv)
-        .filter(c => fType === 'ALL' || c.type === fType)
-        .filter(c => fMode === 'ALL' || c.functionalMode === fMode)
-        .filter(c => fImpact === 'ALL' || c.impact === fImpact);
+        .filter(c => fEnv.includes(c.env))
+        .filter(c => fType.includes(c.type));
 
     return (
         <div style={{ ...globalStyle, display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#fff' }}>
@@ -561,7 +680,7 @@ const Dashboard = () => {
                 <div style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
 
                     <div style={{ background: '#f9fafb', padding: '30px', borderRadius: '16px', border: `1px solid ${colors.border}`, marginBottom: '40px' }}>
-                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
                             <button
                                 onClick={() => setIsModalOpen(true)}
                                 style={{ ...globalStyle, background: colors.primary, color: '#fff', border: 'none', padding: '12px 35px', borderRadius: '10px', cursor: 'pointer', fontWeight: '800', fontSize: '15px', boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.4)' }}
@@ -577,15 +696,19 @@ const Dashboard = () => {
                                 />
                             </div>
 
-                            <select style={{ ...globalStyle, padding: '12px', borderRadius: '10px', border: `1px solid ${colors.border}`, outline: 'none' }} onChange={e => setFEnv(e.target.value)}>
-                                <option value="ALL">Всі середовища</option>
-                                <option value="PROD">PROD</option><option value="TEST">TEST</option><option value="DEV">DEV</option><option value="PREPROD">PREPROD</option>
-                            </select>
+                            <MultiDropdown
+                                label="Env"
+                                options={[{value:'PROD', label:'PROD'}, {value:'TEST', label:'TEST'}, {value:'DEV', label:'DEV'}, {value:'PREPROD', label:'PREPROD'}]}
+                                selected={fEnv}
+                                onToggle={v => toggleFilter(fEnv, setFEnv, v)}
+                            />
 
-                            <select style={{ ...globalStyle, padding: '12px', borderRadius: '10px', border: `1px solid ${colors.border}`, outline: 'none' }} onChange={e => setFType(e.target.value)}>
-                                <option value="ALL">Всі типи </option>
-                                <option value="system">Основна система</option><option value="module">Модуль</option>
-                            </select>
+                            <MultiDropdown
+                                label="Type"
+                                options={[{value:'system', label:'Система'}, {value:'module', label:'Модуль'}]}
+                                selected={fType}
+                                onToggle={v => toggleFilter(fType, setFType, v)}
+                            />
 
                             <div style={{ fontWeight: '800', color: colors.textDark, borderLeft: `2px solid ${colors.border}`, paddingLeft: '20px' }}>
                                 Всього: <span style={{color: colors.primary}}>{filtered.length}</span>
@@ -598,7 +721,6 @@ const Dashboard = () => {
                         <tr style={{ background: '#f8fafc' }}>
                             <th style={{ textAlign: 'left', padding: '20px 25px', fontSize: '11px', color: colors.textGray, textTransform: 'uppercase', letterSpacing: '0.1em' }}>CI NAME</th>
                             <th style={{ textAlign: 'left', padding: '20px 25px', fontSize: '11px', color: colors.textGray, textTransform: 'uppercase', letterSpacing: '0.1em' }}>TYPE</th>
-                            <th style={{ textAlign: 'left', padding: '20px 25px', fontSize: '11px', color: colors.textGray, textTransform: 'uppercase', letterSpacing: '0.1em' }}>SLA/UPTIME</th>
                             <th style={{ textAlign: 'left', padding: '20px 25px', fontSize: '11px', color: colors.textGray, textTransform: 'uppercase', letterSpacing: '0.1em' }}>ICT CATEGORY</th>
                         </tr>
                         </thead>
@@ -613,9 +735,7 @@ const Dashboard = () => {
                             >
                                 <td style={{ padding: '20px 25px', color: colors.primary, fontWeight: '800', borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px', border: `1px solid ${colors.border}`, borderRight: 'none' }}>{c.name}</td>
                                 <td style={{ padding: '20px 25px', fontSize: '14px', borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}` }}>{c.type === 'system' ? 'Основна система' : 'Модуль'}</td>
-                                <td style={{ padding: '20px 25px', color: colors.textGray, fontSize: '14px', borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}` }}>{c.uptime || '—'}</td>
-                                <td style={{ padding: '20px 25px', fontSize: '14px', borderTop: `1px solid ${colors.border}`, borderBottom: `1px solid ${colors.border}` }}>{c.category}</td>
-                                <td style={{ padding: '20px 25px', borderTopRightRadius: '12px', borderBottomRightRadius: '12px', border: `1px solid ${colors.border}`, borderLeft: 'none' }}></td>
+                                <td style={{ padding: '20px 25px', fontSize: '14px', borderTopRightRadius: '12px', borderBottomRightRadius: '12px', border: `1px solid ${colors.border}`, borderLeft: 'none' }}>{c.category}</td>
                             </tr>
                         ))}
                         </tbody>
@@ -624,7 +744,7 @@ const Dashboard = () => {
             </div>
 
             {isModalOpen && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000, backdropFilter: 'blur(8px)' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, backdropFilter: 'blur(8px)' }}>
                     <div style={{ background: '#fff', padding: '55px', borderRadius: '24px', width: '550px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
                         <h3 style={{ textAlign: 'center', marginBottom: '40px', fontSize: '26px', fontWeight: '900', color: colors.textDark, letterSpacing: '-1px' }}>Нова карточка</h3>
 
@@ -656,11 +776,11 @@ const Dashboard = () => {
                             <div style={{marginBottom: '40px'}}>
                                 <label style={{fontSize: '13px', color: colors.textGray, marginBottom: '10px', display: 'block', fontWeight: '700'}}>ПРИВ'ЯЗКА ДО СИСТЕМИ</label>
                                 <select
-                                    onChange={e => setSelection({...selection, parentName: e.target.options[e.target.selectedIndex].text})}
+                                    onChange={e => setSelection({...selection, parentName: e.target.value})}
                                     style={{ ...globalStyle, width: '100%', padding: '16px', borderRadius: '12px', border: `2px solid ${colors.primary}`, fontSize: '16px', outline: 'none' }}
                                 >
-                                    <option>-- Оберіть батьківську систему --</option>
-                                    {cards.filter(x => x.type === 'system').map(s => <option key={s.id}>{s.name}</option>)}
+                                    <option value="">-- Оберіть батьківську систему --</option>
+                                    {cards.filter(x => x.type === 'system').map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                                 </select>
                             </div>
                         )}
@@ -690,23 +810,23 @@ const CreatePage = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         rawName: '', manager: '', admin: '', roleModel: '', uptime: '',
-        owner: '', itAdmin: '', fullName: '', provider: '', desc: '', impact: '', deployment: '', url: '', commissioningDate: '', location: ''
+        owner: '', itAdmin: '', fullName: '', provider: '', desc: '', impact: '', deployment: '',
+        url: '', commissioningDate: '', location: '', rto: '', rpo: '', updatedAt: Date.now()
     });
     const selection = JSON.parse(localStorage.getItem('current_selection') || '{}');
 
     const handleSave = () => {
-        if (!formData.rawName) return alert("Помилка: Назва є обов'язковим параметром!");
-
+        if (!formData.rawName) return alert("Помилка: Назва обов'язкова!");
         const prefix = selection.env === 'PROD' ? 'PROD_' : 'TEST_';
         const finalData = {
+            ...formData,
             name: prefix + formData.rawName,
             type: selection.type,
             env: selection.env,
             category: selection.category,
-            parentName: (selection.parentName && selection.parentName !== '-- Оберіть батьківську систему --') ? selection.parentName : null,
-            ...formData
+            parentName: selection.parentName || null,
+            updatedAt: Date.now()
         };
-
         push(ref(db, 'cards'), finalData).then(() => {
             logAction(finalData.name, "СТВОРЕННЯ", "Додано нову карточку");
             navigate('/');
