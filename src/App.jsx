@@ -47,7 +47,6 @@ const logAction = (ciName, actionType, details = "") => {
 // --- КОМПОНЕНТ ДЕТАЛЬНИХ ПОЛІВ ---
 /**
  * CMDBFields - динамічна форма, що змінюється залежно від Env та Type.
- * Включає всі поля з твоїх скріншотів image_06877d.jpg та image_0522df.png.
  */
 const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, category }) => {
     const isProd = env === 'PROD';
@@ -88,7 +87,7 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
 
     const labelImpactStyle = {
         fontWeight: '800',
-        color: '#000000', // Чорний колір згідно з вимогою
+        color: '#000000',
         fontSize: '12px',
         textTransform: 'uppercase'
     };
@@ -119,6 +118,17 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
                     placeholder="Введіть системний ідентифікатор..."
                 />
             </div>
+            {/* ПУНКТ 1: URL текстове поле */}
+            <div style={inputGroup}>
+                <label style={labelStyle}>URL</label>
+                <input
+                    value={data.url || ''}
+                    onChange={e => updateField('url', e.target.value)}
+                    style={inputStyle}
+                    readOnly={readOnly}
+                    placeholder="https://..."
+                />
+            </div>
 
             {isProd ? (
                 <>
@@ -133,10 +143,11 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
                         <input value={type === 'system' ? 'Основна система' : 'Модуль'} disabled style={{...inputStyle,}} />
                     </div>
 
+                    {/* ПУНКТ 4: Виправлено відображення назви основної системи */}
                     {type === 'module' && (
                         <div style={inputGroup}>
                             <label style={labelStyle}>Основна система</label>
-                            <input value={parentName || data.parentName || ''} disabled style={inputStyle} />
+                            <input value={data.parentName || parentName || ''} disabled style={inputStyle} />
                         </div>
                     )}
 
@@ -166,12 +177,36 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
                         <input value={data.provider || ''} onChange={e => updateField('provider', e.target.value)} style={inputStyle} readOnly={readOnly} />
                     </div>
 
+                    {/* ПУНКТ 2: Дата введення в експлуатацію */}
+                    <div style={inputGroup}>
+                        <label style={labelStyle}>Дата введення в експлуатацію</label>
+                        <input
+                            type="date"
+                            value={data.commissioningDate || ''}
+                            onChange={e => updateField('commissioningDate', e.target.value)}
+                            style={inputStyle}
+                            readOnly={readOnly}
+                        />
+                    </div>
+
+                    {/* ПУНКТ 3: Розташування (тільки PROD і не для External) */}
+                    {(category || data?.category) !== 'External ICT Service' && (
+                        <div style={inputGroup}>
+                            <label style={labelStyle}>Розташування (Location)</label>
+                            <input
+                                value={data.location || ''}
+                                onChange={e => updateField('location', e.target.value)}
+                                style={inputStyle}
+                                readOnly={readOnly}
+                            />
+                        </div>
+                    )}
+
                     <div style={inputGroup}>
                         <label style={labelStyle}>Рольова модель сервісу</label>
                         <input value={data.roleModel || ''} onChange={e => updateField('roleModel', e.target.value)} style={inputStyle} readOnly={readOnly} />
                     </div>
 
-                    {/* Додаємо перевірку: показувати тільки якщо тип 'system' І категорія НЕ 'External ICT Service' */}
                     {type === 'system' && (category || data?.category) !== 'External ICT Service' && (
                         <div style={inputGroup}>
                             <label style={labelStyle}>Модель розгортання (Deployment)</label>
@@ -240,10 +275,11 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
                         <label style={labelStyle}>Тип сервісу</label>
                         <input value={type === 'system' ? 'Основна система' : 'Модуль'} disabled style={inputStyle} />
                     </div>
+                    {/* ПУНКТ 4: Виправлено відображення назви основної системи */}
                     {type === 'module' && (
                         <div style={inputGroup}>
                             <label style={labelStyle}>Основна система</label>
-                            <input value={parentName || data.parentName || ''} disabled style={inputStyle} />
+                            <input value={data.parentName || parentName || ''} disabled style={inputStyle} />
                         </div>
                     )}
                     <div style={inputGroup}>
@@ -252,7 +288,6 @@ const CMDBFields = ({ env, type, data, setData, readOnly = false, parentName, ca
                             <option value="середній">великий</option>
                             <option value="великий">середній</option>
                             <option value="незначний">незначний</option>
-
                         </select>
                     </div>
                     <div style={inputGroup}>
@@ -290,7 +325,6 @@ const ViewPage = () => {
                 setCard(val);
                 setTempData(val);
 
-                // Якщо це система, шукаємо її модулі
                 if (val.type === 'system') {
                     const allCardsRef = ref(db, 'cards');
                     onValue(allCardsRef, (allSnap) => {
@@ -304,7 +338,6 @@ const ViewPage = () => {
                     });
                 }
 
-                // Завантаження історії для цього CI
                 const histRef = ref(db, 'history');
                 onValue(histRef, (hSnap) => {
                     const hData = hSnap.val();
@@ -324,7 +357,6 @@ const ViewPage = () => {
     const handleUpdate = () => {
         if (!tempData.rawName) return alert("Назва обов'язкова!");
 
-        // Визначення змінених полів
         const changedFields = [];
         Object.keys(tempData).forEach(key => {
             if (tempData[key] !== card[key]) {
@@ -396,10 +428,11 @@ const ViewPage = () => {
                         setData={setTempData}
                         readOnly={!editMode}
                         parentName={card.parentName}
+                        category={card.category}
                     />
                 )}
 
-                {/* Accordion для модулів (Тільки для систем в PROD) */}
+                {/* Accordion для модулів */}
                 {!isHistoryOpen && card.type === 'system' && card.env === 'PROD' && (
                     <div style={{ marginTop: '50px', border: `1px solid ${colors.border}`, borderRadius: '12px', overflow: 'hidden' }}>
                         <div
@@ -453,7 +486,6 @@ const Dashboard = () => {
     const [cards, setCards] = useState([]);
     const navigate = useNavigate();
 
-    // 5 РОЗШИРЕНИХ ФІЛЬТРІВ
     const [fName, setFName] = useState('');
     const [fEnv, setFEnv] = useState('ALL');
     const [fType, setFType] = useState('ALL');
@@ -474,7 +506,6 @@ const Dashboard = () => {
         return () => unsubscribe();
     }, []);
 
-    // 4 Категорії
     const subs = ["External ICT Service", "Infrastructure ICT Sevice", "Business ICT Sevice", "Cybersecurity ICT Sevice"];
 
     const filtered = cards
@@ -488,7 +519,6 @@ const Dashboard = () => {
     return (
         <div style={{ ...globalStyle, display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#fff' }}>
 
-            {/* Top Bar */}
             <div style={{ background: '#fff', borderBottom: `1px solid ${colors.border}`, padding: '18px 35px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <div style={{ width: '35px', height: '35px', background: colors.primary, borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', fontWeight: '900' }}>C</div>
@@ -501,7 +531,6 @@ const Dashboard = () => {
 
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
-                {/* Sidebar (image_0531c0.png) */}
                 <div style={{ width: '300px', background: '#f9fafb', borderRight: `1px solid ${colors.border}`, padding: '30px 0' }}>
                     <div
                         style={{ padding: '15px 30px', cursor: 'pointer', fontWeight: '800', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '12px', color: colors.textDark, backgroundColor: '#f3f4f6', marginBottom: '10px' }}
@@ -529,10 +558,8 @@ const Dashboard = () => {
                     ))}
                 </div>
 
-                {/* Registry View */}
                 <div style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
 
-                    {/* Filter Section */}
                     <div style={{ background: '#f9fafb', padding: '30px', borderRadius: '16px', border: `1px solid ${colors.border}`, marginBottom: '40px' }}>
                         <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
                             <button
@@ -566,7 +593,6 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* Main Registry Table */}
                     <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                         <thead>
                         <tr style={{ background: '#f8fafc' }}>
@@ -597,7 +623,6 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Modal for parameter selection (image_053e1c.png context) */}
             {isModalOpen && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000, backdropFilter: 'blur(8px)' }}>
                     <div style={{ background: '#fff', padding: '55px', borderRadius: '24px', width: '550px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
@@ -665,7 +690,7 @@ const CreatePage = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         rawName: '', manager: '', admin: '', roleModel: '', uptime: '',
-        owner: '', itAdmin: '', fullName: '', provider: '', desc: '', impact: '', deployment: ''
+        owner: '', itAdmin: '', fullName: '', provider: '', desc: '', impact: '', deployment: '', url: '', commissioningDate: '', location: ''
     });
     const selection = JSON.parse(localStorage.getItem('current_selection') || '{}');
 
@@ -678,7 +703,7 @@ const CreatePage = () => {
             type: selection.type,
             env: selection.env,
             category: selection.category,
-            parentName: selection.parentName || null,
+            parentName: (selection.parentName && selection.parentName !== '-- Оберіть батьківську систему --') ? selection.parentName : null,
             ...formData
         };
 
